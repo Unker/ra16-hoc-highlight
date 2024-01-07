@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function New(props) {
+function New(props: { children: React.ReactNode }) {
   return (
     <div className="wrap-item wrap-item-new">
       <span className="label">New!</span>
@@ -9,7 +9,7 @@ function New(props) {
   )
 };
 
-function Popular(props) {
+function Popular(props: { children: React.ReactNode }) {
   return (
     <div className="wrap-item wrap-item-popular">
       <span className="label">Popular!</span>
@@ -18,7 +18,34 @@ function Popular(props) {
   )
 };
 
-function Article(props) {
+interface WithViews {
+  views: number;
+}
+
+function withPopularOrNew<T extends WithViews>(Component: React.ComponentType<T>) {
+  return (props: T) => {
+    const { views } = props;
+
+    if (views >= 1000) {
+      return <Popular>{<Component {...props} />}</Popular>;
+    } else if (views < 100) {
+      return <New>{<Component {...props} />}</New>;
+    } else {
+      return <Component {...props} />;
+    }
+  };
+}
+
+const WrappedVideo = withPopularOrNew(Video);
+const WrappedArticle = withPopularOrNew(Article);
+
+interface ArticleProps {
+  type: string;
+  title: string;
+  views: number;
+}
+
+function Article(props: ArticleProps) {
   return (
     <div className="item item-article">
       <h3><a href="#">{props.title}</a></h3>
@@ -42,17 +69,17 @@ function Video(props: VideoProps) {
   )
 };
 
-function List(props) {
+function List(props: { list: (ArticleProps | VideoProps)[] }) {
   return props.list.map((item, index) => {
     switch (item.type) {
       case 'video':
         return (
-          <Video key={index} {...item} />
+          <WrappedVideo key={index} {...(item as VideoProps)} />
         );
 
       case 'article':
         return (
-          <Article key={index} {...item} />
+          <WrappedArticle key={index} {...(item as ArticleProps)} />
         );
     }
   });
